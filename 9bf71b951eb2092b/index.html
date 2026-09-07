@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Ditech Booking API — developer reference</title>
+<style>
+  :root {
+    --ink: #1b1f23;
+    --muted: #5b6470;
+    --line: #e2e5e9;
+    --code-bg: #0f1720;
+    --code-ink: #d7e0ea;
+    --accent: #b34700;
+    --warn-bg: #fff6ea;
+    --warn-line: #e8b968;
+    --danger-bg: #fdecec;
+    --danger-line: #e0838a;
+    --ok-bg: #eaf7ee;
+    --ok-line: #8bc9a1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: #fff;
+  }
+  .layout { display: flex; max-width: 1180px; margin: 0 auto; }
+  nav.rail {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 220px; flex: none; padding: 32px 16px; height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--line);
+  }
+  nav.rail h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 20px 0 6px; }
+  nav.rail h3:first-child { margin-top: 0; }
+  nav.rail a { display: block; padding: 3px 0; color: var(--ink); text-decoration: none; font-size: 14px; }
+  nav.rail a:hover { color: var(--accent); }
+  main { flex: 1; min-width: 0; padding: 40px 48px 120px; }
+  h1 { font-size: 30px; margin: 0 0 8px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; padding-top: 8px; border-top: 1px solid var(--line); }
+  h2:first-of-type { border-top: none; }
+  h3 { font-size: 17px; margin: 28px 0 8px; }
+  .lede { color: var(--muted); font-size: 17px; margin: 0 0 28px; }
+  .sec-intro { color: var(--muted); }
+  code { font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #f0f2f5; padding: .1em .35em; border-radius: 4px; }
+  pre {
+    background: var(--code-bg); color: var(--code-ink); padding: 16px 18px; border-radius: 8px;
+    overflow-x: auto; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0 20px; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; margin: 16px 0; font-size: 14px; }
+  dl.facts dt { color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  .note, .warn, .danger, .ok {
+    margin: 14px 0; padding: 12px 16px; border-radius: 6px; font-size: 14px;
+  }
+  .note { background: #f5f7fa; border-left: 3px solid var(--line); }
+  .warn { background: var(--warn-bg); border-left: 3px solid var(--warn-line); }
+  .danger { background: var(--danger-bg); border-left: 3px solid var(--danger-line); }
+  .ok { background: var(--ok-bg); border-left: 3px solid var(--ok-line); }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 20px 24px; margin: 16px 0 28px; }
+  .card h4 { margin: 0 0 12px; font: 14px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .card h4 .method { color: var(--accent); font-weight: 700; }
+  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  a { color: inherit; }
+  .banner { background: #f0f2f5; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="rail">
+  <h3>Setup</h3>
+  <a href="#access">Access &amp; auth</a>
+  <a href="#routes">Route list</a>
+
+  <h3>Reads</h3>
+  <a href="#services">GET /services</a>
+  <a href="#service-area">GET /service-area/check</a>
+  <a href="#availability">GET /schedule/availability</a>
+
+  <h3>Writes</h3>
+  <a href="#jobs">POST /jobs</a>
+  <a href="#requests">POST /requests</a>
+  <a href="#lookup">POST /jobs/lookup</a>
+  <a href="#presign">POST /attachments/presign</a>
+
+  <h3>Reference</h3>
+  <a href="#errors">Errors</a>
+  <a href="#quirks">Looks like a bug, isn't</a>
+  <a href="#uploads">File uploads — full flow</a>
+  <a href="#openitems">Still open</a>
+</nav>
+
+<main>
+  <h1>Ditech Booking API</h1>
+  <p class="lede">
+    Seven public endpoints — three reads, three writes, and one lookup — plus everything needed
+    to test a photo upload end to end. Sourced from
+    <a href="API-Requirements.md"><code>API-Requirements.md</code></a>, which remains the
+    canonical doc; this page is a rendered, hostable copy of it for quick reference. Last synced
+    2026-09-07.
+  </p>
+
+  <div class="banner">
+    Three legacy routes carry a <code>/v1/</code> prefix (<code>/v1/bookings</code>,
+    <code>/v1/customers</code>, <code>/v1/services/{id}/availability/search</code>) and are being
+    retired (<a href="https://github.com/clarific-tech/ditech-project-notes/issues/69">#69</a>).
+    Everything on this page is the newer, no-prefix surface that replaces them.
+  </div>
+
+  <h2 id="access">Access &amp; auth</h2>
+  <dl class="facts">
+    <dt>Base URL</dt><dd><code>https://d10x73j3qxkfam.cloudfront.net</code></dd>
+    <dt>Auth header</dt><dd><code>X-API-Key: tenant_ditech_pub_3affa5c7-fc84-4332-a9dd-707076af0eb3</code></dd>
+    <dt>Content-Type</dt><dd><code>application/json</code></dd>
+    <dt>Timestamps</dt><dd>ISO 8601 with offset, <code>Australia/Melbourne</code></dd>
+  </dl>
+  <div class="warn">
+    Always call through this <strong>CloudFront</strong> base URL, never the underlying
+    <code>execute-api</code> host directly. WAF rate limiting sits in front of CloudFront, so the
+    raw API Gateway origin bypasses it — and since the origin lock (A-027) shipped, the raw host
+    no longer answers at all.
+  </div>
+  <p>
+    <strong>The public key above is not a secret.</strong> It is inlined into the deployed
+    booking bundle at build time (<code>VITE_X_API_KEY</code>), so anyone with devtools already
+    has it — it identifies the tenant, it doesn't authenticate a caller. It's safe to keep in a
+    shared document and does not need rotating after development.
+  </p>
+  <div class="danger">
+    The <strong>admin</strong> key (<code>/clarific/prod/api/keys/admin</code>) is the opposite —
+    a real credential. It must never appear in a shared doc, a repo, or any <code>VITE_*</code>/
+    <code>NEXT_PUBLIC_*</code> env var.
+  </div>
+  <p>
+    <code>401</code> means no key was sent. <code>403</code> means a key was sent but not
+    recognised — usually a stale one left over from a rotation.
+  </p>
+
+  <h3 id="routes">Route list</h3>
+  <table>
+    <tr><th>Method</th><th>Path</th></tr>
+    <tr><td><code>GET</code></td><td><code>/services</code></td></tr>
+    <tr><td><code>GET</code></td><td><code>/schedule/availability</code></td></tr>
+    <tr><td><code>GET</code></td><td><code>/service-area/check?suburb=&amp;postcode=</code></td></tr>
+    <tr><td><code>POST</code></td><td><code>/requests</code></td></tr>
+    <tr><td><code>POST</code></td><td><code>/jobs</code></td></tr>
+    <tr><td><code>POST</code></td><td><code>/jobs/lookup</code></td></tr>
+    <tr><td><code>POST</code></td><td><code>/attachments/presign</code></td></tr>
+  </table>
+  <p>Verify access with:</p>
+  <pre><code>curl -s "https://d10x73j3qxkfam.cloudfront.net/services" \
+  -H "X-API-Key: tenant_ditech_pub_3affa5c7-fc84-4332-a9dd-707076af0eb3"</code></pre>
+
+  <h2 id="services">Reads</h2>
+
+  <div class="card" id="services-card">
+    <h4><span class="method">GET</span> /services</h4>
+    <p>Returns the tenant's bookable services. Session capacity and duration are config, not derived.</p>
+  </div>
+
+  <div class="card" id="service-area">
+    <h4><span class="method">GET</span> /service-area/check</h4>
+    <p>Query params <code>suburb</code> and <code>postcode</code>. Confirms whether Ditech currently services that address.</p>
+  </div>
+
+  <div class="card" id="availability">
+    <h4><span class="method">GET</span> /schedule/availability</h4>
+    <p>Returns open slots for a given service and date range.</p>
+  </div>
+
+  <h2>Writes</h2>
+  <p class="sec-intro">Two endpoints create work or an upload token; a third creates a request; a fourth looks one up.</p>
+
+  <div class="card" id="jobs">
+    <h4><span class="method">POST</span> /jobs</h4>
+    <p>Creates a job directly (in-area, non-urgent path). Never send <code>endsAt</code>, <code>resourceId</code> or <code>status</code> — the server derives them. <code>serviceId</code> is optional.</p>
+    <pre><code>{
+  "serviceId": "…",          // optional
+  "startsAt": "2026-09-10T09:00:00+10:00",
+  "customer": { "name": "…", "email": "…", "phone": "…" },
+  "notes": "…",
+  "uploadToken": "…"          // optional — see POST /attachments/presign
+}</code></pre>
+  </div>
+
+  <div class="card" id="requests">
+    <h4><span class="method">POST</span> /requests</h4>
+    <p>Creates a request — out-of-area, urgent, reschedule or refund. Never auto-confirmed.</p>
+    <pre><code>{
+  "type": "…",
+  "customer": { "name": "…", "email": "…", "phone": "…" },
+  "relatedJobNo": "…",        // optional, for reschedule/refund
+  "uploadToken": "…"          // optional — see POST /attachments/presign
+}</code></pre>
+  </div>
+
+  <div class="card" id="lookup">
+    <h4><span class="method">POST</span> /jobs/lookup</h4>
+    <p>Job number plus a contact detail → job status. Rate limited separately from the other writes (see Looks like a bug, isn't).</p>
+  </div>
+
+  <div class="card" id="presign">
+    <h4><span class="method">POST</span> /attachments/presign</h4>
+    <p>Mints a short-lived S3 upload form. Same public key as every other route. Full flow: <a href="#uploads">File uploads</a>.</p>
+    <pre><code>Request:
+{
+  "files": [
+    { "filename": "leak.jpg", "contentType": "image/jpeg", "sizeBytes": 842104 }
+  ],
+  "uploadToken": null   // omit on the first call; pass one back to add more files to the same batch
+}
+
+Response · 201:
+{
+  "uploadToken": "…",
+  "files": [
+    { "attachmentId": "…", "url": "https://…s3…", "fields": { "…": "…" } }
+  ]
+}</code></pre>
+    <div class="ok">
+      <strong>Not covered by the write rate limit.</strong> Verified against the deployed WAF
+      web ACL 2026-09-05: <code>WriteRateLimit</code> scope-matches <code>/jobs</code> and
+      <code>/requests</code> exactly. Presign falls under the 600-per-5-minute general backstop
+      instead, so uploading several photos before submitting the form never counts against the
+      30-per-5-minute write limit.
+    </div>
+  </div>
+
+  <h2 id="errors">Errors</h2>
+  <table>
+    <tr><th>Status</th><th>Meaning</th></tr>
+    <tr><td><code>400</code></td><td>Validation failure — body has an <code>{error, message}</code> JSON shape</td></tr>
+    <tr><td><code>401</code></td><td>No <code>X-API-Key</code> sent</td></tr>
+    <tr><td><code>403</code></td><td>Key present but not recognised — usually a stale key left over from a rotation — <strong>or</strong> rate limited (WAF also answers with a bare 403)</td></tr>
+    <tr><td><code>404</code></td><td>Wrong path — check for an accidental <code>/v1/</code> prefix</td></tr>
+    <tr><td><code>502</code></td><td>Usually the Aurora cold-start case below — retry</td></tr>
+  </table>
+
+  <h2 id="quirks">Looks like a bug, isn't</h2>
+
+  <div class="warn">
+    <strong>1. First request after ~15 minutes idle returns <code>502</code>.</strong>
+    Aurora Serverless v2 runs with <code>MinCapacity: 0</code> and a 900-second auto-pause, so the
+    cluster scales to zero and the first caller pays for the resume. Call it again and it
+    succeeds. Tracked as
+    <a href="https://github.com/clarific-tech/ditech-project-notes/issues/127">#127</a> — this is
+    a real go-live fault, not just a dev annoyance, because <code>GET /services</code> is the
+    booking page's first call.
+  </div>
+
+  <div class="warn">
+    <strong>2. There is no <code>/v1/</code> prefix on these seven routes.</strong>
+    <code>GET /v1/services</code> is a plain <code>404</code> — a likely first wrong turn when
+    porting old code.
+  </div>
+
+  <div class="warn">
+    <strong>3. Writes are rate limited — but not all of them the same way.</strong>
+    The WAF <code>WriteRateLimit</code> rule matches <code>POST /jobs</code> and
+    <code>POST /requests</code> exactly — nothing else. <code>POST /jobs/lookup</code> has its
+    own separate limit (20 per 5 minutes). <code>POST /attachments/presign</code> isn't covered
+    by either — it falls under the general 600-per-5-minute backstop, so a four-photo booking
+    costs one write against the limit, not five. A burst of retries against <code>/jobs</code> or
+    <code>/requests</code> from one browser can still trip <code>WriteRateLimit</code> well before
+    any real customer would — wait 5 minutes.
+  </div>
+
+  <div class="danger">
+    <strong>Every booking created here is real.</strong> There is no test environment and no
+    cleanup path — each one permanently consumes availability in production.
+  </div>
+
+  <h2 id="uploads">File uploads — full flow</h2>
+  <p class="sec-intro">
+    Attaching a photo to a job or request never touches AWS directly from the browser. It's a
+    three-step round trip: <strong>presign → upload straight to S3 → claim on submit.</strong>
+  </p>
+
+  <h3>Why there are no S3 credentials</h3>
+  <p>
+    Deliberate, not an oversight. An AWS key cannot be scoped to a single upload, cannot enforce
+    a size or type limit, cannot be revoked for one person, and would grant read access to every
+    tenant's files. <strong>The presigned form <em>is</em> the credential</strong> — single-file,
+    single-use, short-lived.
+  </p>
+
+  <h3>The two hostnames</h3>
+  <table>
+    <tr><th></th><th>Host</th><th>Auth</th></tr>
+    <tr><td>1. Ask permission</td><td><code>https://d10x73j3qxkfam.cloudfront.net</code></td><td><code>X-API-Key</code> (the public key above)</td></tr>
+    <tr><td>2. Upload the bytes</td><td><code>https://clarific-attachments-prod-737404990215.s3.ap-southeast-2.amazonaws.com/</code></td><td>none — the signed form fields carry it</td></tr>
+  </table>
+  <p>The bucket name isn't a secret — it appears in every presign response — and it blocks all public access (an anonymous <code>GET</code> of a stored object returns <code>403</code>, verified).</p>
+
+  <h3>Limits — booking page</h3>
+  <table>
+    <tr><th></th><th>Value</th></tr>
+    <tr><td>Files per presign call</td><td><strong>4</strong></td></tr>
+    <tr><td>Max size per file</td><td><strong>10 MB</strong></td></tr>
+    <tr><td>Accepted content types</td><td><code>image/jpeg</code>, <code>image/png</code>, <code>image/heic</code>, <code>image/webp</code></td></tr>
+    <tr><td>Upload form validity</td><td><strong>15 minutes</strong></td></tr>
+  </table>
+  <ul>
+    <li>HEIC is accepted on purpose — it's the iPhone camera default. Browsers generally can't render a HEIC thumbnail; show a filename/icon placeholder instead of assuming <code>&lt;img&gt;</code> works.</li>
+    <li>Content types match <strong>exactly</strong>, never by prefix — <code>image/svg+xml</code> is refused.</li>
+  </ul>
+  <div class="warn">
+    <strong><code>sizeBytes</code> in the request is advisory, not a per-request cap.</strong>
+    Verified live: the signed form always carries the fixed 10 MB ceiling, never the number you
+    declared — declare 1 KB, upload 5 MB, and it succeeds. Validate <code>file.size</code>
+    client-side; don't rely on having declared a small number.
+  </div>
+
+  <h3>CORS</h3>
+  <p>Allowed origins on the bucket: <code>http://localhost:5173</code> (Vite), <code>http://localhost:3000</code>, and the deployed site <code>https://d245tm623nz562.cloudfront.net</code>. An unlisted origin gets a <code>403</code> with no CORS header — in a browser that surfaces as an opaque network failure rather than a readable error. If uploads fail only in the browser but work from <code>curl</code>, check the origin first.</p>
+
+  <h3>Runnable test — presign, upload, verify</h3>
+  <pre><code>BASE=https://d10x73j3qxkfam.cloudfront.net
+KEY=tenant_ditech_pub_3affa5c7-fc84-4332-a9dd-707076af0eb3
+
+# 1. ask permission (one call covers the whole batch, max 4)
+curl -s -X POST "$BASE/attachments/presign" \
+  -H "X-API-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"files":[{"filename":"test.jpg","contentType":"image/jpeg","sizeBytes":12345}]}' > presign.json
+
+# 2. upload straight to S3 — every returned field, then the file LAST
+URL=$(jq -r '.files[0].url' presign.json)
+ARGS=(); while IFS=$'\t' read -r k v; do ARGS+=(-F "$k=$v"); done \
+  &lt; &lt;(jq -r '.files[0].fields | to_entries[] | [.key,.value] | @tsv' presign.json)
+curl -s -o /dev/null -w '%{http_code}\n' -X POST "$URL" "${ARGS[@]}" -F "file=@test.jpg"
+# expect: 204
+
+# 3. attach to a booking — pass the token on your normal submit
+TOKEN=$(jq -r .uploadToken presign.json)
+# ... POST /requests or /jobs with  "uploadToken": "$TOKEN"  in the body</code></pre>
+  <p><strong>Success is <code>204 No Content</code>, not <code>200</code></strong>, and the body is empty.</p>
+  <div class="danger"><strong><code>file</code> must be appended last.</strong> S3 stops reading at the file part, so anything added after it is never seen — and the failure is a signature error that never mentions ordering. This is the most common way to get this wrong.</div>
+  <div class="warn">Don't set a <code>Content-Type</code> header on the upload request — let the browser set the multipart boundary; the file's own content type is already inside the returned fields.</div>
+  <div class="warn">Treat <code>fields</code> as opaque — append every key exactly as returned, don't rename, reorder or add. The real set includes <code>Content-Type</code>, <code>key</code>, <code>bucket</code>, <code>Policy</code>, <code>X-Amz-Algorithm</code>, <code>X-Amz-Credential</code>, <code>X-Amz-Date</code>, <code>X-Amz-Security-Token</code>, <code>X-Amz-Signature</code> — note the capitalised <code>Policy</code> and <code>X-Amz-*</code>, and that the exact set varies with how AWS signs.</div>
+
+  <h3>What happens after you submit the booking</h3>
+  <p>
+    Passing <code>uploadToken</code> on <code>POST /requests</code> or <code>POST /jobs</code>
+    attaches the photos. Behind the scenes the file is <strong>copied to a permanent
+    location</strong> and the record repointed at it — verified live 2026-09-05:
+    <code>staging/ditech/{token}/{id}.jpeg</code> becomes
+    <code>tenants/ditech/requests/ditech-rq-5/{id}.jpeg</code>. Nothing is re-uploaded and the UI
+    never handles the permanent key.
+  </p>
+  <div class="warn"><strong>A bad token never fails a booking.</strong> An unknown or expired <code>uploadToken</code> is logged and ignored, and the booking still succeeds — deliberate, so a customer never loses a booking because a photo expired. A <code>201</code> from <code>POST /requests</code> is <strong>not</strong> evidence the photos attached.</div>
+  <div class="note"><strong>Anything never attached to a booking is deleted after 24 hours.</strong> That's the staging cleanup working as intended, not a fault. Attached photos are permanent.</div>
+
+  <h3>Which layer rejected you</h3>
+  <table>
+    <tr><th>You see</th><th>From</th><th>Means</th></tr>
+    <tr><td><code>400</code> JSON <code>{error, message}</code></td><td>our API</td><td>Presign request broke a rule — too many files, bad content type, bad <code>sizeBytes</code>. <code>message</code> lists every failure at once</td></tr>
+    <tr><td><code>401</code></td><td>our API</td><td>No API key</td></tr>
+    <tr><td><code>403</code>, short body, our host</td><td>our API / WAF</td><td>Wrong or stale key — or rate limited. <code>403</code> = key wrong; <code>401</code> = key absent</td></tr>
+    <tr><td><code>403</code> XML from an <code>amazonaws.com</code> host</td><td>S3</td><td>Form refused — file not appended last, form older than 15 minutes, or a field was altered</td></tr>
+    <tr><td><code>EntityTooLarge</code> XML</td><td>S3</td><td>Real file over 10 MB, whatever <code>sizeBytes</code> claimed</td></tr>
+  </table>
+  <p>There is no <code>413</code> — an oversized upload returns S3's <code>EntityTooLarge</code> XML; parse for the string. S3 errors are XML, not JSON — don't <code>res.json()</code> an S3 failure.</p>
+
+  <p>Narrative walkthrough, error handling and UI guidance:
+  <a href="File-Uploads-Frontend-Guide.md">File Uploads – Frontend Integration Guide</a>. Design
+  rationale: <a href="../Backend-AWS-Implementation/Attachments-Implementation-Plan.md">Attachments Implementation Plan</a>.</p>
+
+  <h2 id="openitems">Still open</h2>
+  <ul>
+    <li>Capacity numbers (7 per session, 10 per day) are provisional.</li>
+    <li>Suburb routing is inert — no suburb table exists yet (see gap WG1/WG2 in <a href="API-Requirements.md">API-Requirements.md</a>).</li>
+    <li>Payments — not wired into this surface.</li>
+  </ul>
+
+  <footer>
+    Seven public endpoints. Source of truth: <a href="API-Requirements.md"><code>ditech-project-notes/Booking-Website/API-Requirements.md</code></a>.
+    This page is a static, git-tracked, editable copy — open it directly from disk
+    (<code>file://…/api-reference.html</code>) or via any static file host; no server required.
+  </footer>
+</main>
+</div>
+</body>
+</html>
