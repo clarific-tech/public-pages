@@ -79,6 +79,9 @@
   <a href="#access">Access &amp; auth</a>
   <a href="#routes">Route list</a>
 
+  <h3>Admin</h3>
+  <a href="#admin">Cognito login</a>
+
   <h3>Reads</h3>
   <a href="#services">GET /services</a>
   <a href="#service-area">GET /service-area/check</a>
@@ -157,6 +160,40 @@
   <p>Verify access with:</p>
   <pre><code>curl -s "https://d10x73j3qxkfam.cloudfront.net/services" \
   -H "X-API-Key: tenant_ditech_pub_3affa5c7-fc84-4332-a9dd-707076af0eb3"</code></pre>
+
+  <h2 id="admin">Admin access — Cognito login</h2>
+  <p class="sec-intro">
+    A separate surface from the public booking API above. Admin routes
+    (<code>/admin/**</code>) sit behind a Cognito user pool, not the <code>X-API-Key</code> used
+    everywhere else on this page.
+  </p>
+  <div class="danger">Login email/password were sent separately, over a different channel — not repeated here.</div>
+
+  <h3>Cognito pool</h3>
+  <dl class="facts">
+    <dt>Region</dt><dd><code>ap-southeast-2</code></dd>
+    <dt>User Pool ID</dt><dd><code>ap-southeast-2_uuXtypRcO</code></dd>
+    <dt>App client ID</dt><dd><code>5pj3833b3k86vkaimu9fsjcdk8</code> (no secret)</dd>
+    <dt>Auth flow</dt><dd>SRP — use Amplify Auth v6 or <code>amazon-cognito-identity-js</code></dd>
+  </dl>
+
+  <h3>Calling admin routes</h3>
+  <dl class="facts">
+    <dt>Base URL</dt><dd><code>https://d10x73j3qxkfam.cloudfront.net</code></dd>
+    <dt>Admin routes</dt><dd><code>/admin/**</code></dd>
+    <dt>Header</dt><dd><code>Authorization: Bearer &lt;ID token&gt;</code></dd>
+  </dl>
+  <div class="warn">
+    Send the <strong>ID token</strong> on every request, not the access token. It lasts
+    <strong>1 hour</strong> — use the refresh token to renew it rather than re-authenticating.
+  </div>
+
+  <div class="note">
+    Two ways to do the login step: a custom SRP form (Amplify Auth v6 or
+    <code>amazon-cognito-identity-js</code>) or the Cognito <strong>Hosted UI</strong>.
+    <strong>Only the Hosted UI needs extra setup on our side</strong> (callback URLs registered
+    on the app client) — reply with which one you're using.
+  </div>
 
   <h2 id="services">Reads</h2>
 
